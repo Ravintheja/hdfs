@@ -1,0 +1,40 @@
+#Pig Code
+
+hdfs dfs -mkdir hdfs://localhost:9000/Pig_Data2
+hdfs dfs -put /resources/results.csv hdfs://localhost:9000/Pig_Data2
+
+pig -x local
+
+#2.2.1 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	• results = LOAD 'results.csv' USING PigStorage(',') as (date:datetime, home:chararray, away:chararray, hscore:int, ascore:int, tournament:chararray, city:chararray, country:chararray, neutral:boolean);
+	• filtered = FILTER results BY neutral == false;  
+	• grouped = GROUP filtered BY home;  
+	• summed = FOREACH grouped GENERATE group, SUM(filtered.hscore), SUM(filtered.ascore);  
+
+#2.2.2 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	• results = LOAD 'results.csv' USING PigStorage(',') as (date:datetime, home:chararray, away:chararray, hscore:int, ascore:int, tournament:chararray, city:chararray, country:chararray, neutral:boolean);
+	• grouped = GROUP results BY away;
+	• averaged = FOREACH grouped GENERATE group, AVG(results.ascore);
+	
+	#Part 2
+	• filtered2 = FILTER results BY neutral == true;  
+	• grouped2 = GROUP filtered2 BY home;
+	• averaged2 = FOREACH grouped GENERATE group, AVG(results.hscore);
+	
+	• joined = JOIN averaged BY $0, averaged2 BY $0;
+	• added = FOREACH joined GENERATE $0, ($1 + $3) / 2; 
+	• ordered = ORDER added BY $1 DESC;
+	• limited = LIMIT ordered 10;
+
+#2.2.3 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+	• results = LOAD 'results.csv' USING PigStorage(',') as (date:datetime, home:chararray, away:chararray, hscore:int, ascore:int, tournament:chararray, city:chararray, country:chararray, neutral:boolean);
+	• filtered = FILTER results BY hscore > ascore; 
+	• filtered2 = FILTER results BY hscore < ascore; 
+	• grouped = GROUP filtered BY away;
+	• grouped2 = GROUP filtered2 BY home;
+	• count = FOREACH grouped GENERATE group, COUNT(filtered.away);
+	• count2 = FOREACH grouped2 GENERATE group, COUNT(filtered2.home);
+	• joined = JOIN count BY $0, count2 BY $0; 
+	• added = FOREACH joined GENERATE $0, $1 + $3; 
+	• ordered = ORDER added BY $1 DESC;
+	• limited = LIMIT ordered 5;
